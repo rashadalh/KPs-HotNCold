@@ -27,7 +27,7 @@ If the `temperature` at the time of exercise is above the oracle response, the `
 
 
 ### Team:
-(1) Ashwin Chary: https://github.com/ash-inthewild
+(1) Ash Chary: https://github.com/ash-inthewild
 (2) Mcknittrick Kaminski: https://github.com/mckamyk 
 (3) Rashad Haddad: https://github.com/rashadalh
 
