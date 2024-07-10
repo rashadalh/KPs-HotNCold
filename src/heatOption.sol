@@ -37,7 +37,6 @@ contract heatOption is IHeatOption, NoReentrancy {
 
     uint256 public location; // location of the asset
 
-
     constructor (address _heatToken, address _owner, address _arbitrator, address _heatOracle, uint256 _expiryBlock, uint256 _strikePrice, uint256 _location) {
         heatToken = _heatToken;
         owner = _owner;
@@ -133,14 +132,11 @@ contract heatOption is IHeatOption, NoReentrancy {
         // check if the option has expired
         require(block.number > expiryBlock, "Option has not expired yet");
 
-        // check that we are BEFORE the arbitration period
-        require(block.number < expiryBlock + arbitrationPeriod, "Arbitration period has finished");
-
-
         // Check if YES Won (price of the asset is greater than the strike price)
         if (Ioracle(heatOracle).getTemperature(location) > strikePrice) {
             winnerIsYES = true;
         }
+        exercised = true;
     }
 
     // function to transfer portion of winnings to the winner calling this function

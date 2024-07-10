@@ -30,6 +30,7 @@ contract kpmarket is IMarket, NoReentrancy {
     mapping (address=>uint256) hoIndexes;
     mapping (uint256=>uint256) locationIntToIndex;
     mapping (string=>uint256) locationStringToIndex;
+    mapping (string=>uint256[]) locationNameToHoIndicies;
     string[] public locations;
 
 
@@ -54,6 +55,7 @@ contract kpmarket is IMarket, NoReentrancy {
         locationStringToIndex[_locationName] = locations.length - 1;
         heatOptions.push(address(new heatOption(heatToken, _owner, _arbitrator, _heatOracle, _expiryBlock, _strikePrice, locations.length - 1)));
         hoIndexes[heatOptions[heatOptions.length - 1]] = heatOptions.length - 1;
+        locationNameToHoIndicies[_locationName].push(hoIndexes[heatOptions[heatOptions.length - 1]]);
         return heatOptions[heatOptions.length - 1];
     }
 
@@ -80,4 +82,20 @@ contract kpmarket is IMarket, NoReentrancy {
     function withdrawPayoutNO(address _optionAddress) public noReentrancy {
         IHeatOption(_optionAddress).withdrawPayoutNO(msg.sender);
     }
+
+    function getHeatOptions() public view returns(address[] memory) {
+        return heatOptions;
+    }
+
+    function getHeatOptionsByLocation(string calldata _location) public view returns(address[] memory) {
+        address[] memory hos = new address[](locationNameToHoIndicies[_location].length);
+        for (uint256 i = 0; i < locationNameToHoIndicies[_location].length; i++) {
+            hos[i] = heatOptions[locationNameToHoIndicies[_location][i]];
+        }
+        return hos;
+    }
+
+    function getLocations() public view returns(string[] memory) {
+        return locations;
+    }   
 }

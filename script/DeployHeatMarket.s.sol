@@ -2,6 +2,7 @@
 pragma solidity ^0.8.0;
 
 import "forge-std/Script.sol";
+import "forge-std/console.sol";
 import { Token } from "../src/erc20.sol";
 import { Standard_Token } from "../src/erc20.sol";
 import { Ioracle } from "../src/oracle.sol";
@@ -44,8 +45,11 @@ contract DeployHeatMarket is Script {
             oracleAddress,  // arbitrator
             oracleAddress,  // oracle
             expiryBlock,  // current block + 100
-            initialTemperature  // strike price
+            initialTemperature,  // strike price
+            "New York"
         );
+
+        console.log("Market Address: ",marketAddr);
 
         vm.stopBroadcast();
     }

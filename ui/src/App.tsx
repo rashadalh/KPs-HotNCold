@@ -1,13 +1,19 @@
-import "./App.css";
+import { Face } from "./components/face";
+import { Header } from "./components/header";
+import { LocationList } from "./components/HeatOptions";
+import Providers from "./Providers";
 
 function App() {
   return (
-    <div className="">
-      <div className="text-xl">
-        Katy Perry's <span className="text-red-500 font-extrabold">Hot</span>{" "}
-        and <span className="text-blue-400 font-extrabold">Cold</span>
+    <Providers>
+      <Header />
+      <div className="flex justify-center pt-4">
+        <div className="w-[800px]">
+          <LocationList />
+        </div>
       </div>
-    </div>
+      <Face />
+    </Providers>
   );
 }
 
