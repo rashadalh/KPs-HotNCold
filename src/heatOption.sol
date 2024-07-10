@@ -10,12 +10,12 @@ interface IHeatOption {
     function betYes(address _bettor, uint256 num_tokens) external;
     function betNo(address _bettor, uint256 num_tokens) external;
     function arbitrate(bool winnerIsYES) external;
-    function exerciseOption() external;
+    function exerciseOption(uint256 _location) external;
     function withdrawPayoutYES(address _bettor) external;
     function withdrawPayoutNO(address _bettor) external;
 }
 
-contract heatOption is NoReentrancy, IHeatOption {
+contract heatOption is IHeatOption, NoReentrancy {
     address public heatToken; // address of the HT token
     address public owner; // address of the owner of the option
     address public heatOracle; // address of the oracle that will provide the price of the asset
@@ -66,7 +66,7 @@ contract heatOption is NoReentrancy, IHeatOption {
         _;
     }
 
-    function betYes(address _bettor, uint256 num_tokens) public override noReentrancy {
+    function betYes(address _bettor, uint256 num_tokens) public noReentrancy {
         // check if the option has not been exercised
         require(!exercised, "Option has already been exercised");
 
@@ -86,7 +86,7 @@ contract heatOption is NoReentrancy, IHeatOption {
         totalYES += num_tokens;
     }
 
-    function betNo(address _bettor, uint256 num_tokens) public override  noReentrancy {
+    function betNo(address _bettor, uint256 num_tokens) public noReentrancy {
         // check if the option has not been exercised
         require(!exercised, "Option has already been exercised");
 
@@ -108,7 +108,7 @@ contract heatOption is NoReentrancy, IHeatOption {
 
     // arbitrator can arbitrate the option only during the arbitration period
     // even if the option has already been exercised
-    function arbitrate(bool _winnerIsYES) public override onlyArbitrator noReentrancy {
+    function arbitrate(bool _winnerIsYES) public onlyArbitrator noReentrancy {
         // check if the option has expired
         require(block.number > expiryBlock, "Option has not expired yet");
 
@@ -122,7 +122,7 @@ contract heatOption is NoReentrancy, IHeatOption {
         exercised = true;
     }
 
-    function exerciseOption(uint256 _location) public override noReentrancy {
+    function exerciseOption(uint256 _location) public noReentrancy {
         // check if option is not yet expired
         require(!exercised, "Option has already been exercised");
         
@@ -140,7 +140,7 @@ contract heatOption is NoReentrancy, IHeatOption {
     }
 
     // function to transfer portion of winnings to the winner calling this function
-    function withdrawPayoutYES(address _bettor) onlyOwner noReentrancy public override {
+    function withdrawPayoutYES(address _bettor) onlyOwner noReentrancy public {
         // check if the option has been exercised
         require(exercised, "Option has not been exercised yet");
 
@@ -174,7 +174,7 @@ contract heatOption is NoReentrancy, IHeatOption {
         }
     }
 
-    function withdrawPayoutNO(address _bettor) public override noReentrancy {
+    function withdrawPayoutNO(address _bettor) public noReentrancy {
         // check if the option has been exercised
         require(exercised, "Option has not been exercised yet");
 
