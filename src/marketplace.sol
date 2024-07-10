@@ -51,6 +51,7 @@ contract kpmarket is IMarket, NoReentrancy {
 
     function deployHeatOption(address _owner, address _arbitrator, address _heatOracle, uint256 _expiryBlock, uint256 _strikePrice, string memory _locationName) public onlyOwner noReentrancy returns(address) {
         locations.push(_locationName);
+        locationStringToIndex[_locationName] = locations.length - 1;
         heatOptions.push(address(new heatOption(heatToken, _owner, _arbitrator, _heatOracle, _expiryBlock, _strikePrice, locations.length - 1)));
         hoIndexes[heatOptions[heatOptions.length - 1]] = heatOptions.length - 1;
         return heatOptions[heatOptions.length - 1];
