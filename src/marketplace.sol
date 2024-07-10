@@ -9,7 +9,7 @@ import { NoReentrancy } from "./noReentrancy.sol";
 import { Token } from "./erc20.sol";
 
 interface IMarket {
-    function deployHeatOption(address _owner, address _arbitrator, address _heatOracle, uint256 _expiryBlock, uint256 _strikePrice) external;
+    function deployHeatOption(address _owner, address _arbitrator, address _heatOracle, uint256 _expiryBlock, uint256 _strikePrice) external returns(address);
     function betYesOnHeatOption(address _optionAddress, uint256 num_tokens) external;
     function betNoOnHeatOption(address _optionAddress, uint256 num_tokens) external;
     function arbitrateHeatOption(address _optionAddress, bool winnerIsYES) external;
@@ -25,7 +25,9 @@ contract kpmarket is IMarket, NoReentrancy {
     address public heatToken;
     address public heatOracle;
 
-    mapping(address => address) public heatOptions;
+    // array of addresses
+    address[] public heatOptions;
+    mapping (address=>uint) hoIndexes;
 
     constructor(address _heatToken, address _heatOracle) {
         owner = msg.sender;
@@ -38,31 +40,38 @@ contract kpmarket is IMarket, NoReentrancy {
         _;
     }
 
-    function deployHeatOption(address _owner, address _arbitrator, address _heatOracle, uint256 _expiryBlock, uint256 _strikePrice) public override onlyOwner noReentrancy{
-        heatOptions[_owner] = address(new heatOption(heatToken, _owner, _arbitrator, _heatOracle, _expiryBlock, _strikePrice));
+    modifier addressExistsInHeatOptions(address _optionAddress) {
+        require(hoIndexes[_optionAddress] != 0, "Heat Option does not exist");
+        _;
     }
 
-    function betYesOnHeatOption(address _optionAddress, uint256 num_tokens) public override noReentrancy {
-        IHeatOption(heatOptions[_optionAddress]).betYes(msg.sender, num_tokens);
+    function deployHeatOption(address _owner, address _arbitrator, address _heatOracle, uint256 _expiryBlock, uint256 _strikePrice) public override onlyOwner noReentrancy returns(address) {
+        heatOptions.push(address(new heatOption(heatToken, _owner, _arbitrator, _heatOracle, _expiryBlock, _strikePrice)));
+        hoIndexes[heatOptions[heatOptions.length - 1]] = heatOptions.length - 1;
+        return heatOptions[heatOptions.length - 1];
     }
 
-    function betNoOnHeatOption(address _optionAddress, uint256 num_tokens) public override noReentrancy {
-        IHeatOption(heatOptions[_optionAddress]).betNo(msg.sender, num_tokens);
+    function betYesOnHeatOption(address _optionAddress, uint256 num_tokens) public override noReentrancy addressExistsInHeatOptions(_optionAddress) {
+        IHeatOption(_optionAddress).betYes(msg.sender, num_tokens);
+    }
+
+    function betNoOnHeatOption(address _optionAddress, uint256 num_tokens) public override noReentrancy addressExistsInHeatOptions(_optionAddress) {
+        IHeatOption(_optionAddress).betNo(msg.sender, num_tokens);
     }
 
     function arbitrateHeatOption(address _optionAddress, bool winnerIsYES) public override noReentrancy {
-        IHeatOption(heatOptions[_optionAddress]).arbitrate(winnerIsYES);
+        IHeatOption(_optionAddress).arbitrate(winnerIsYES);
     }
 
     function exerciseHeatOption(address _optionAddress) public override noReentrancy onlyOwner {
-        IHeatOption(heatOptions[_optionAddress]).exerciseOption();
+        IHeatOption(_optionAddress).exerciseOption();
     }
 
     function withdrawPayoutYES(address _optionAddress) public override noReentrancy {
-        IHeatOption(heatOptions[_optionAddress]).withdrawPayoutYES(msg.sender);
+        IHeatOption(_optionAddress).withdrawPayoutYES(msg.sender);
     }
 
     function withdrawPayoutNO(address _optionAddress) public override noReentrancy {
-        IHeatOption(heatOptions[_optionAddress]).withdrawPayoutNO(msg.sender);
+        IHeatOption(_optionAddress).withdrawPayoutNO(msg.sender);
     }
 }
