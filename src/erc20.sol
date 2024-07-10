@@ -1,6 +1,7 @@
 // https://eips.ethereum.org/EIPS/eip-20
 // SPDX-License-Identifier: MIT
 pragma solidity ^0.8.0;
+import { NoReentrancy } from "./noReentrancy.sol";
 
 interface Token {
 
@@ -36,7 +37,7 @@ interface Token {
     event Approval(address indexed _owner, address indexed _spender, uint256 _value);
 }
 
-contract Standard_Token is Token {
+contract Standard_Token is Token, NoReentrancy {
     uint256 constant private MAX_UINT256 = 2**256 - 1;
     mapping (address => uint256) public balances;
     mapping (address => mapping (address => uint256)) public allowed;
@@ -91,5 +92,11 @@ contract Standard_Token is Token {
 
     function allowance(address _owner, address _spender) public override view returns (uint256 remaining) {
         return allowed[_owner][_spender];
+    }
+
+    function mint(address _to, uint256 _value) public noReentrancy {
+        balances[_to] += _value;
+        totalSupply += _value;
+        emit Transfer(address(0), _to, _value);
     }
 }
