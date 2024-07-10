@@ -9,7 +9,7 @@ import { NoReentrancy } from "./noReentrancy.sol";
 import { Token } from "./erc20.sol";
 
 interface IMarket {
-    function deployHeatOption(address _owner, address _arbitrator, address _heatOracle, uint256 _expiryBlock, uint256 _strikePrice) external returns(address);
+    function deployHeatOption(address _owner, address _arbitrator, address _heatOracle, uint256 _expiryBlock, uint256 _strikePrice, string memory _locationName) external returns(address);
     function betYesOnHeatOption(address _optionAddress, uint256 num_tokens) external;
     function betNoOnHeatOption(address _optionAddress, uint256 num_tokens) external;
     function arbitrateHeatOption(address _optionAddress, bool winnerIsYES) external;
@@ -27,7 +27,11 @@ contract kpmarket is IMarket, NoReentrancy {
 
     // array of addresses
     address[] public heatOptions;
-    mapping (address=>uint) hoIndexes;
+    mapping (address=>uint256) hoIndexes;
+    mapping (uint256=>uint256) locationIntToIndex;
+    mapping (string=>uint256) locationStringToIndex;
+    string[] public locations;
+
 
     constructor(address _heatToken, address _heatOracle) {
         owner = msg.sender;
@@ -45,33 +49,34 @@ contract kpmarket is IMarket, NoReentrancy {
         _;
     }
 
-    function deployHeatOption(address _owner, address _arbitrator, address _heatOracle, uint256 _expiryBlock, uint256 _strikePrice) public override onlyOwner noReentrancy returns(address) {
-        heatOptions.push(address(new heatOption(heatToken, _owner, _arbitrator, _heatOracle, _expiryBlock, _strikePrice)));
+    function deployHeatOption(address _owner, address _arbitrator, address _heatOracle, uint256 _expiryBlock, uint256 _strikePrice, string memory _locationName) public onlyOwner noReentrancy returns(address) {
+        locations.push(_locationName);
+        heatOptions.push(address(new heatOption(heatToken, _owner, _arbitrator, _heatOracle, _expiryBlock, _strikePrice, locations.length - 1)));
         hoIndexes[heatOptions[heatOptions.length - 1]] = heatOptions.length - 1;
         return heatOptions[heatOptions.length - 1];
     }
 
-    function betYesOnHeatOption(address _optionAddress, uint256 num_tokens) public override noReentrancy addressExistsInHeatOptions(_optionAddress) {
+    function betYesOnHeatOption(address _optionAddress, uint256 num_tokens) public noReentrancy addressExistsInHeatOptions(_optionAddress) {
         IHeatOption(_optionAddress).betYes(msg.sender, num_tokens);
     }
 
-    function betNoOnHeatOption(address _optionAddress, uint256 num_tokens) public override noReentrancy addressExistsInHeatOptions(_optionAddress) {
+    function betNoOnHeatOption(address _optionAddress, uint256 num_tokens) public noReentrancy addressExistsInHeatOptions(_optionAddress) {
         IHeatOption(_optionAddress).betNo(msg.sender, num_tokens);
     }
 
-    function arbitrateHeatOption(address _optionAddress, bool winnerIsYES) public override noReentrancy {
+    function arbitrateHeatOption(address _optionAddress, bool winnerIsYES) public noReentrancy {
         IHeatOption(_optionAddress).arbitrate(winnerIsYES);
     }
 
-    function exerciseHeatOption(address _optionAddress) public override noReentrancy onlyOwner {
+    function exerciseHeatOption(address _optionAddress) public noReentrancy onlyOwner {
         IHeatOption(_optionAddress).exerciseOption();
     }
 
-    function withdrawPayoutYES(address _optionAddress) public override noReentrancy {
+    function withdrawPayoutYES(address _optionAddress) public noReentrancy {
         IHeatOption(_optionAddress).withdrawPayoutYES(msg.sender);
     }
 
-    function withdrawPayoutNO(address _optionAddress) public override noReentrancy {
+    function withdrawPayoutNO(address _optionAddress) public noReentrancy {
         IHeatOption(_optionAddress).withdrawPayoutNO(msg.sender);
     }
 }

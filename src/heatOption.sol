@@ -10,7 +10,7 @@ interface IHeatOption {
     function betYes(address _bettor, uint256 num_tokens) external;
     function betNo(address _bettor, uint256 num_tokens) external;
     function arbitrate(bool winnerIsYES) external;
-    function exerciseOption(uint256 _location) external;
+    function exerciseOption() external;
     function withdrawPayoutYES(address _bettor) external;
     function withdrawPayoutNO(address _bettor) external;
 }
@@ -35,14 +35,18 @@ contract heatOption is IHeatOption, NoReentrancy {
     uint256 public totalYES; // total amount of HT tokens bet on YES
     uint256 public totalNO; // total amount of HT tokens bet on NO
 
+    uint256 public location; // location of the asset
 
-    constructor (address _heatToken, address _owner, address _arbitrator, address _heatOracle, uint256 _expiryBlock, uint256 _strikePrice) {
+
+    constructor (address _heatToken, address _owner, address _arbitrator, address _heatOracle, uint256 _expiryBlock, uint256 _strikePrice, uint256 _location) {
         heatToken = _heatToken;
         owner = _owner;
         arbitrator = _arbitrator;
         heatOracle = _heatOracle;
         expiryBlock = _expiryBlock;
         strikePrice = _strikePrice;
+        location = _location;
+
 
         winnerIsYES = false; // default value
 
@@ -122,7 +126,7 @@ contract heatOption is IHeatOption, NoReentrancy {
         exercised = true;
     }
 
-    function exerciseOption(uint256 _location) public noReentrancy {
+    function exerciseOption() public noReentrancy {
         // check if option is not yet expired
         require(!exercised, "Option has already been exercised");
         
@@ -134,7 +138,7 @@ contract heatOption is IHeatOption, NoReentrancy {
 
 
         // Check if YES Won (price of the asset is greater than the strike price)
-        if (Ioracle(heatOracle).getTemperature(_location) > strikePrice) {
+        if (Ioracle(heatOracle).getTemperature(location) > strikePrice) {
             winnerIsYES = true;
         }
     }
