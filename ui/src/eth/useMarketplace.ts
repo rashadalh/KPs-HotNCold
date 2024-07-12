@@ -21,7 +21,7 @@ export const useHeatOptions = (location: string) => {
 };
 
 export const useHeatOption = (address: `0x${string}`) => {
-  const { data } = useReadContracts({
+  const { data, queryKey } = useReadContracts({
     contracts: [
       {
         address,
@@ -41,17 +41,22 @@ export const useHeatOption = (address: `0x${string}`) => {
       {
         address,
         abi: heatOptionAbi,
-        functionName: "balancesYES",
+        functionName: "totalYES",
       },
       {
         address,
         abi: heatOptionAbi,
-        functionName: "balancesNO",
+        functionName: "totalNO",
       },
       {
         address,
         abi: heatOptionAbi,
         functionName: "winnerIsYES",
+      },
+      {
+        address,
+        abi: heatOptionAbi,
+        functionName: "strikePrice",
       },
     ],
   });
@@ -60,8 +65,16 @@ export const useHeatOption = (address: `0x${string}`) => {
     location: data?.[0].result,
     expiryBlock: data?.[1].result,
     exercised: data?.[2].result,
-    balancesYES: data?.[3].result,
-    balancesNO: data?.[4].result,
+    balancesYES:
+      data?.[3].result !== undefined
+        ? data?.[3].result / BigInt(10 ** 18)
+        : undefined,
+    balancesNO:
+      data?.[4].result !== undefined
+        ? data?.[4].result / BigInt(10 ** 18)
+        : undefined,
     winnerIsYES: data?.[5].result,
+    strikePrice: data?.[6].result,
+    queryKey,
   };
 };

@@ -1,6 +1,7 @@
 import { Face } from "./components/face";
 import { Header } from "./components/header";
 import { LocationList } from "./components/HeatOptions";
+import { Toaster } from "./components/ui/sonner";
 import Providers from "./Providers";
 
 function App() {
@@ -13,6 +14,7 @@ function App() {
         </div>
       </div>
       <Face />
+      <Toaster position="top-right" className="mt-10 bg-gray-600" />
     </Providers>
   );
 }

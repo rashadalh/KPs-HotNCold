@@ -50,13 +50,26 @@ contract kpmarket is IMarket, NoReentrancy {
         _;
     }
 
-    function deployHeatOption(address _owner, address _arbitrator, address _heatOracle, uint256 _expiryBlock, uint256 _strikePrice, string memory _locationName) public onlyOwner noReentrancy returns(address) {
-        locations.push(_locationName);
-        locationStringToIndex[_locationName] = locations.length - 1;
+    function deployHeatOption(address _owner, address _arbitrator, address _heatOracle, uint256 _expiryBlock, uint256 _strikePrice, string calldata  _locationName) public onlyOwner noReentrancy returns(address) {
+        if (!locationExists(_locationName)) {
+            locations.push(_locationName);
+            locationStringToIndex[_locationName] = locations.length - 1;
+        }
+
         heatOptions.push(address(new heatOption(heatToken, _owner, _arbitrator, _heatOracle, _expiryBlock, _strikePrice, locations.length - 1)));
         hoIndexes[heatOptions[heatOptions.length - 1]] = heatOptions.length - 1;
         locationNameToHoIndicies[_locationName].push(hoIndexes[heatOptions[heatOptions.length - 1]]);
         return heatOptions[heatOptions.length - 1];
+    }
+
+    function locationExists(string calldata _locationName) private view returns(bool exists) {
+        for (uint256 i = 0; i < locations.length; i++) {
+            if (keccak256(abi.encodePacked(locations[i])) == keccak256(abi.encodePacked(_locationName))) {
+                exists = true;
+                break;
+            }
+        }
+        return exists;
     }
 
     function betYesOnHeatOption(address _optionAddress, uint256 num_tokens) public noReentrancy addressExistsInHeatOptions(_optionAddress) {

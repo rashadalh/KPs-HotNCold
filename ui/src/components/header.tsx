@@ -7,6 +7,8 @@ import {
   useSwitchChain,
 } from "wagmi";
 import { Switch } from "./ui/switch";
+import { useKpToken, useMintKp } from "~/eth/useKpToken";
+import { Button } from "./ui/button";
 
 export const Header = () => {
   const { address, isConnected } = useAccount();
@@ -14,6 +16,8 @@ export const Header = () => {
   const { disconnect } = useDisconnect();
   const chainId = useChainId();
   const { switchChain } = useSwitchChain();
+  const mint = useMintKp();
+  const { balance } = useKpToken();
 
   const doConnect = () => {
     connect({
@@ -47,6 +51,17 @@ export const Header = () => {
       <div className="flex items-center">
         {isConnected ? (
           <div className="flex items-center gap-x-4">
+            <div className="space-x-4">
+              {!!balance && balance > 0 && (
+                <span>{balance.toLocaleString()} KP</span>
+              )}
+              <Button
+                onClick={mint}
+                disabled={!address || balance === undefined || balance > 1000}
+              >
+                Mint Tokens
+              </Button>
+            </div>
             <div className="flex items-center gap-x-2">
               Local RPC
               <Switch onClick={switchNetwork} checked={chainId === anvil.id} />
