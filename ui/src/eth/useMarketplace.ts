@@ -97,7 +97,7 @@ export const useHeatOption = (address: `0x${string}`) => {
     if (blockNumber < expiryBlock) return "open";
     if (!exercised) return "expired";
     if (blockNumber < expiryBlock + arbPeriod) return "arbitrating";
-    return "open";
+    return "closed";
   }, [blockNumber, expiryBlock, arbPeriod, arbFinished, exercised]);
 
   return {

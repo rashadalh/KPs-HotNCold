@@ -15,6 +15,7 @@ import { useBet } from "~/eth/useBet";
 import { useKpToken } from "~/eth/useKpToken";
 import { useExercise } from "~/eth/useExercise";
 import { RefreshCw } from "lucide-react";
+import { useWinnings, useWithdraw } from "~/eth/useWithdraw";
 
 export const LocationList = () => {
   const { data, isLoading } = useLocations();
@@ -57,7 +58,7 @@ export const HeatOption: React.FC<{ address: `0x${string}` }> = ({
   const seconds = useMemo(() => {
     if (!blockNumber || !ho?.expiryBlock) return undefined;
 
-    const secs = Number((ho.expiryBlock! - blockNumber) * BigInt(13));
+    const secs = Number((ho.expiryBlock! - blockNumber) * BigInt(30));
     return Number(secs.toString());
   }, [blockNumber, ho.expiryBlock]);
   const ref = useRef<HTMLDivElement>(null);
@@ -98,7 +99,7 @@ export const HeatOption: React.FC<{ address: `0x${string}` }> = ({
           animate={{ opacity: open ? 1 : 0 }}
           transition={{ ease: "easeInOut", delay: open ? 0.1 : 0 }}
         >
-          <HeatOptionAction address={address} />
+          {open && <HeatOptionAction address={address} />}
         </motion.div>
       </motion.div>
     </motion.div>
@@ -116,12 +117,19 @@ export const HeatOptionAction: React.FC<{ address: `0x${string}` }> = ({
   const { balance } = useKpToken();
   const { exercise, isPending: exercisePending } = useExercise(address);
   const { data: blockNumber } = useBlockNumber();
+  // const { withdrawYes, withdrawNo } = useWithdraw(address);
 
   const newAmmount = (val: string) => {
     const num = Number(val);
     if (Number.isNaN(num)) return;
     setAmount(Math.min(num, balance!));
   };
+
+  const arbEnds = useMemo(() => {
+    if (!blockNumber || !ho.arbPeriod || !ho.expiryBlock) return undefined;
+
+    return Number((ho.expiryBlock + ho.arbPeriod - blockNumber) * BigInt(30));
+  }, [blockNumber, ho.arbPeriod, ho.expiryBlock]);
 
   if (ho.status === "open") {
     return (
@@ -164,16 +172,29 @@ export const HeatOptionAction: React.FC<{ address: `0x${string}` }> = ({
   } else if (ho.status === "arbitrating") {
     return (
       <div className="h-12 flex justify-center items-center gap-x-4 pb-2">
-        <div className="text-red-500">
-          {hms(
-            Number(
-              (blockNumber || BigInt(0)) -
-                ho.arbPeriod! +
-                ho.expiryBlock! * BigInt(13)
-            )
-          )}
-        </div>
+        <div className="text-red-500">{hms(arbEnds || 0)}</div>
       </div>
     );
+  } else if (ho.status === "closed") {
+    return <HeatOptionWithdraw address={address} />;
   }
+};
+
+const HeatOptionWithdraw: React.FC<{ address: `0x${string}` }> = ({
+  address,
+}) => {
+  const { withdrawableYes, withdrawableNo } = useWinnings(address);
+  const { withdrawYes, withdrawNo, isPending } = useWithdraw(address);
+
+  return (
+    <div className="h-12 flex justify-center items-center gap-x-4 pb-2">
+      <Button className="bg-cyan-400">Get Cold Winnings</Button>
+      <div className="text-xs">
+        <div>Winnings</div>
+        <div>Cold: {withdrawableNo?.toString()}</div>
+        <div>Hot: {withdrawableYes?.toString()}</div>
+      </div>
+      <Button className="bg-red-400">Get Hot Winnings</Button>
+    </div>
+  );
 };
