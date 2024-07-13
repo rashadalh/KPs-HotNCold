@@ -1,5 +1,6 @@
+import { useMemo } from "react";
 import { heatOptionAbi, kpmarketAbi } from "./abi";
-import { useReadContract, useReadContracts } from "wagmi";
+import { useBlockNumber, useReadContract, useReadContracts } from "wagmi";
 
 const MarketAddress = "0x9fE46736679d2D9a65F0992F2272dE9f3c7fa6e0";
 
@@ -20,7 +21,11 @@ export const useHeatOptions = (location: string) => {
   });
 };
 
+type HeatOptionStatus = "open" | "expired" | "arbitrating" | "closed";
+
 export const useHeatOption = (address: `0x${string}`) => {
+  const { data: blockNumber } = useBlockNumber();
+
   const { data, queryKey } = useReadContracts({
     contracts: [
       {
@@ -58,8 +63,42 @@ export const useHeatOption = (address: `0x${string}`) => {
         abi: heatOptionAbi,
         functionName: "strikePrice",
       },
+      {
+        address,
+        abi: heatOptionAbi,
+        functionName: "arbitrationPeriodFinished",
+      },
+      {
+        address,
+        abi: heatOptionAbi,
+        functionName: "arbitrationPeriod",
+      },
     ],
   });
+
+  const [expiryBlock, exercised, arbPeriod, arbFinished] = [
+    data?.[1].result,
+    data?.[2].result,
+    data?.[8].result,
+    data?.[7].result,
+  ];
+
+  const status = useMemo<HeatOptionStatus>(() => {
+    if (
+      !blockNumber ||
+      !expiryBlock ||
+      !arbPeriod ||
+      arbFinished === undefined ||
+      exercised === undefined
+    )
+      return "open";
+
+    if (arbFinished) return "closed";
+    if (blockNumber < expiryBlock) return "open";
+    if (!exercised) return "expired";
+    if (blockNumber < expiryBlock + arbPeriod) return "arbitrating";
+    return "open";
+  }, [blockNumber, expiryBlock, arbPeriod, arbFinished, exercised]);
 
   return {
     location: data?.[0].result,
@@ -75,6 +114,9 @@ export const useHeatOption = (address: `0x${string}`) => {
         : undefined,
     winnerIsYES: data?.[5].result,
     strikePrice: data?.[6].result,
+    arbFinished: data?.[7].result,
+    arbPeriod: data?.[8].result,
+    status,
     queryKey,
   };
 };

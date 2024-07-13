@@ -23,7 +23,7 @@ export const HeatBets: React.FC<HeatBetsProps> = ({ yes, no, expanded }) => {
     if (portion > 0.5) {
       return { no: 0, yes: (portion - 0.5) * width };
     } else {
-      return { no: (0.5 - portion) * width * 2, yes: 0 };
+      return { no: (0.5 - portion) * width, yes: 0 };
     }
   }, [width, portion]);
 

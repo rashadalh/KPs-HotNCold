@@ -13,6 +13,8 @@ import { Button } from "./ui/button";
 import { Input } from "./ui/input";
 import { useBet } from "~/eth/useBet";
 import { useKpToken } from "~/eth/useKpToken";
+import { useExercise } from "~/eth/useExercise";
+import { RefreshCw } from "lucide-react";
 
 export const LocationList = () => {
   const { data, isLoading } = useLocations();
@@ -51,13 +53,13 @@ export const HeatOption: React.FC<{ address: `0x${string}` }> = ({
   address,
 }) => {
   const ho = useHeatOption(address);
-  const { data } = useBlockNumber();
+  const { data: blockNumber } = useBlockNumber();
   const seconds = useMemo(() => {
-    if (!data || !ho?.expiryBlock) return undefined;
+    if (!blockNumber || !ho?.expiryBlock) return undefined;
 
-    const secs = Number((ho.expiryBlock! - data) * BigInt(13));
+    const secs = Number((ho.expiryBlock! - blockNumber) * BigInt(13));
     return Number(secs.toString());
-  }, [data, ho.expiryBlock]);
+  }, [blockNumber, ho.expiryBlock]);
   const ref = useRef<HTMLDivElement>(null);
   const [open, setOpen] = useState(false);
   useOnClickOutside(ref, () => setOpen(false));
@@ -74,7 +76,15 @@ export const HeatOption: React.FC<{ address: `0x${string}` }> = ({
         <div className="text-2xl">{ho.strikePrice?.toString()}°</div>
         <HeatBets yes={ho.balancesYES!} no={ho.balancesNO!} expanded={open} />
         <div className="text-right">
-          <div>{seconds && hms(seconds!)}</div>
+          {ho.status === "open" ? (
+            <div>{seconds && hms(seconds!)}</div>
+          ) : ho.status === "expired" ? (
+            <div className="text-red-500">Expired</div>
+          ) : ho.status === "arbitrating" ? (
+            <div className="text-red-500">In Arbitration</div>
+          ) : (
+            <div className="text-green-500">Closed</div>
+          )}
         </div>
       </div>
 
@@ -98,11 +108,14 @@ export const HeatOption: React.FC<{ address: `0x${string}` }> = ({
 export const HeatOptionAction: React.FC<{ address: `0x${string}` }> = ({
   address,
 }) => {
+  const ho = useHeatOption(address);
   const [amount, setAmount] = useState<number | undefined>(undefined);
   const { betYes, betNo, isPending } = useBet(address, () =>
     setAmount(undefined)
   );
   const { balance } = useKpToken();
+  const { exercise, isPending: exercisePending } = useExercise(address);
+  const { data: blockNumber } = useBlockNumber();
 
   const newAmmount = (val: string) => {
     const num = Number(val);
@@ -110,29 +123,57 @@ export const HeatOptionAction: React.FC<{ address: `0x${string}` }> = ({
     setAmount(Math.min(num, balance!));
   };
 
-  return (
-    <div className="h-12 flex justify-center items-center gap-x-4 pb-2">
-      <Button
-        onClick={() => betNo(amount!)}
-        disabled={!amount}
-        className="bg-cyan-500 hover:bg-cyan-300"
-      >
-        Bet Colder
-      </Button>
-      <Input
-        placeholder="1,000"
-        disabled={isPending}
-        value={amount || ""}
-        onChange={(e) => newAmmount(e.target.value)}
-        className="focus-visible:ring-none bg-gradient-to-r from-cyan-400 to-red-400 rounded-md border-none w-[100px] text-center text-black placeholder:text-gray-600"
-      />
-      <Button
-        onClick={() => betYes(amount!)}
-        disabled={!amount}
-        className="bg-red-500 hover:bg-red-300"
-      >
-        Bet Hotter
-      </Button>
-    </div>
-  );
+  if (ho.status === "open") {
+    return (
+      <div className="h-12 flex justify-center items-center gap-x-4 pb-2">
+        <Button
+          onClick={() => betNo(amount!)}
+          disabled={!amount}
+          className="bg-cyan-500 hover:bg-cyan-300"
+        >
+          Bet Colder
+        </Button>
+        <Input
+          placeholder="1,000"
+          disabled={isPending}
+          value={amount || ""}
+          onChange={(e) => newAmmount(e.target.value)}
+          className="focus-visible:ring-none bg-gradient-to-r from-cyan-600 to-red-400 rounded-md border-none w-[100px] text-center text-black placeholder:text-gray-600"
+        />
+        <Button
+          onClick={() => betYes(amount!)}
+          disabled={!amount}
+          className="bg-red-500 hover:bg-red-300"
+        >
+          Bet Hotter
+        </Button>
+      </div>
+    );
+  } else if (ho.status === "expired") {
+    return (
+      <div className="h-12 flex justify-center items-center gap-x-4 pb-2">
+        <Button onClick={exercise} disabled={exercisePending}>
+          {exercisePending ? (
+            <RefreshCw className="size-4 animate-spin" />
+          ) : (
+            "Exercise"
+          )}
+        </Button>
+      </div>
+    );
+  } else if (ho.status === "arbitrating") {
+    return (
+      <div className="h-12 flex justify-center items-center gap-x-4 pb-2">
+        <div className="text-red-500">
+          {hms(
+            Number(
+              (blockNumber || BigInt(0)) -
+                ho.arbPeriod! +
+                ho.expiryBlock! * BigInt(13)
+            )
+          )}
+        </div>
+      </div>
+    );
+  }
 };
