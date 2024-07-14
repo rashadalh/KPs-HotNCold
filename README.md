@@ -1,4 +1,37 @@
-Our inspiration stems from a an earlier hackathon where we looked at creating forward contracts on ETH and saw that there is an application around agriculture and farming, and thought it would be cool if we can make the instrument simpler and realized binary options allow for that, and we can further simplify by mimicking weather derivatives; but also realized that such instruments are rarely available to the average farmer across the world, and putting it on chain and allowing for regular people to come in and create and operate a dual sided mkt is a powerful thing.
+## Welcome to Katy Perry's Hot'n Cold Weather Prediction Market
+We are a prediction for the weather, with an intent to deploy against on Rootstock Network. This will bring
+the hotest weather prediction market to the coolest L2 secured by the largest and most secure blockchain.
 
-What it does
-the marketplace allows for users to take either side of a event outcome, weather is hot or weather is cold for ex. or will it rain or not rain. this effectively allows for farmers, and speculators to create event markets around such binary outcomes and take a hedge on their crops or harvest. This same market can be extrapolated to weather an event is held due to inclement weather, for ex. does rain cancel the game?
+Using the product is very simple. Simply connect your wallet, pick a city, a date, and pick whether the
+high temp will be hotter or colder. At the time of maturity, our weather oracle will update with the correct
+temperature, and after an arbitration period, the payout will be dispersed to the winning side. That's it!
+
+## Instructions to run:
+(Assuming you have bun and foundry installed on your system)
+(1) Install dependencies -- `bun i`
+(2) Start the site --> `bun dev`
+(3) Start Anvil, in any new terminal window in the root dir enter --> `anvil`
+(4) Take the first 5 contract addresses and type out the private key in an `.env` field
+Similar to:  
+```
+PRIVATE_KEY="User1"
+USER_1="User2"
+USER_2="User3"
+USER_3="User4"
+USER_4="User5"
+```
+(Anvil automatically sets up these test accounts for you on a local rpc)
+(5) Deploy contracts onto Anvil with foundry:
+(5a) replace line48 in `script/DeployHeatMarket.sol` with your metamask RSK address
+(5b) run the script:
+`forge script --broadcast --via-ir --rpc-url http://localhost:8545 DeployHeatMarket`
+
+(6) Go to: `http://localhost:5173/`
+(7) On the website enable `local RPC`
+(8) Have fun!   
+
+
+## Team:
+(1) McKittrick Kaminski --> https://github.com/mckamyk 
+(2) Rashad Haddad --> https://github.com/rashadalh
+(3) Ash-inthewild --> https://github.com/ash-inthewild 
